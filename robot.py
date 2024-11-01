@@ -33,7 +33,7 @@ def find_robot_ip():
     pass
 
 # If your XRP isn't at the default address, set that here
-os.environ["HALSIMXRP_HOST"] = "192.168.42.23"  # use '.22' or '.23' if using XRP XIAO ESP32S camera (otherwise, use '.1')
+os.environ["HALSIMXRP_HOST"] = "192.168.42.22"  # use '.22' or '.23' if using XRP XIAO ESP32S camera (otherwise, use '.1')
 os.environ["HALSIMXRP_PORT"] = "3540"
 
 

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/xrp2cmd.iml" filepath="$PROJECT_DIR$/.idea/xrp2cmd.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/xrp3cmd.iml" filepath="$PROJECT_DIR$/.idea/xrp3cmd.iml" />
     </modules>
   </component>
 </project>

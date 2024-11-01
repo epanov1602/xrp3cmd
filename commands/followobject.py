@@ -117,6 +117,9 @@ class FollowObject(commands2.Command):
             if max(detectedSize) > self.stopWhen.maxSize or y > self.stopWhen.maxY or y < self.stopWhen.minY:
                 self.finished = True  # looks like the object is very close now, time to finish
                 return
+            if self.fwdStepSeconds == 0 and abs(x) < self.stopWhen.aimingToleranceDegrees:
+                self.finished = True  # aiming at it pretty well and not allowed to move to it
+                return
 
         # 3. otherwise we are not done: pick a target direction for the robot to go
         currentDirection = self.drivetrain.getHeading()

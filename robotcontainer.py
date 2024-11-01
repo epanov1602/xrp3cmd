@@ -22,7 +22,7 @@ from subsystems.cvcamera import CVCamera
 from subsystems.arm import Arm
 from subsystems.stopwatch import Stopwatch
 
-from commands.followobject import FollowObject
+from commands.followobject import FollowObject, StopWhen
 from commands.aimtodirection import AimToDirection
 from commands.gotopoint import GoToPoint
 from helpers import detection
@@ -42,16 +42,16 @@ class RobotContainer:
         self.stopwatch = Stopwatch("race-time")
 
         ## 1. detector for faces?
-        ## face_detector_model = cv2.CascadeClassifier('resources/haarcascade_frontalface_default.xml')
-        ## def face_detector(frame, tracker, previous_bbox):
-        ##    return detection.detect_biggest_face(face_detector_model, frame, previous_bbox, tracker)
+        face_detector_model = cv2.CascadeClassifier('resources/haarcascade_frontalface_default.xml')
+        def face_detector(frame, tracker, previous_bbox):
+           return detection.detect_biggest_face(face_detector_model, frame, previous_bbox, tracker)
 
         ## 2. detector for apriltags?
-        apriltag_detector_model = apriltags.Detector(families="tag36h11", quad_sigma=0.2)
+        apriltag_detector_model = apriltags.Detector(families="tag36h11", quad_sigma=0.0, quad_decimate=1.0, decode_sharpening=0.7)
         def apriltag_detector(frame, tracker, previous_bbox, only_these_ids=None):
             return detection.detect_biggest_apriltag(apriltag_detector_model, frame, only_these_ids, tracker)
 
-        self.camera = CVCamera(80, 60, 10) #, detector=apriltag_detector)
+        self.camera = CVCamera(80, 60, 10)  #, detector=apriltag_detector)
         self.camera.start()
 
         # Assume that joystick "j0" is plugged into channel 0
@@ -131,6 +131,7 @@ class RobotContainer:
         # to use drivetrain, and will restart running after that other command is done)
         self.drivetrain.setDefaultCommand(drive)
 
+        stopWhen = StopWhen(aimingToleranceDegrees=0.0001)
         self.j0.button(1).onTrue(FollowObject(self.camera, self.drivetrain))
 
     def getAutonomousCommand(self):
