@@ -40,31 +40,27 @@ class FollowObject(commands2.Command):
         self.addRequirements(drivetrain)
 
         self.finished = False
-        self.targetDirection = None
         self.minDetectionIndex = None
         self.subcommand: commands2.Command = None
 
     def initialize(self):
         self.finished = False
-        self.targetDirection = None
         self.minDetectionIndex = None
 
     def execute(self):
         # 1. if there is subcommand to go in some direction, just work on executing it
-        if self.subcommand is not None:
+        if self.subcommand is None:
             if self.subcommand.isFinished():
                 self.subcommand.end(False)  # if subcommand is finished, we must end() it
                 self.subcommand = None  # and we don't have it anymore
             else:
                 self.subcommand.execute()  # otherwise, the subcommand must run
 
-        # 2. otherwise, if target direction is at least known, make that subcommand to go in that direction
-        elif self.targetDirection is not None:
-            self.subcommand = self.makeSubcommand()
-
-        # 3. but if target direction is not known at all, look at the camera and find in which target direction to go
+        # 2. otherwise, look at the camera to find target direction, and make a subcommand to go in that direction
         else:
-            self.tryGetTargetDirection()
+            direction = self.findDirectionFromCamera()
+            if direction is not None:
+                self.subcommand = self.makeSubcommand(direction)
 
     def end(self, interrupted: bool):
         if self.subcommand is not None:
@@ -78,23 +74,25 @@ class FollowObject(commands2.Command):
         if self.finished:
             return True  # otherwise, if we are thinking we are finished, then we are
 
-    def makeSubcommand(self):
-        degreesFromTarget = (self.drivetrain.getHeading() - self.targetDirection).degrees()
-        self.targetDirection = None  # target direction will need to be recalculated after subcommand stops
-        self.minDetectionIndex = None
+    def makeSubcommand(self, direction):
+        degreesFromTarget = (self.drivetrain.getHeading() - direction).degrees()
 
         if abs(degreesFromTarget) < FollowObject.ANGLE_TOLERANCE and self.fwdStepSeconds > 0:
             # 1. if robot is mostly aiming in correct direction already, just make a step in that direction
-            drive = AimToDirection(self.targetDirection.degrees(), self.drivetrain, fwd_speed=1.0)
+            drive = DriveDistance(speed=1.0, inches=999, drivetrain=self.drivetrain)
+            ## drive = AimToDirection(direction.degrees(), self.drivetrain, fwd_speed=1.0)
             newSubcommand = drive.withTimeout(self.fwdStepSeconds)  # add a correct timeout for the step
         else:
             # 2. rotate if robot is pointing too far from the object or if we aren't supposed to make steps forward
-            newSubcommand = AimToDirection(self.targetDirection.degrees(), self.drivetrain)
+            turn = AimToDirection(direction.degrees(), self.drivetrain)
+            newSubcommand = turn
+
+        self.minDetectionIndex = None  # invalidate the current detection, because the robot is about to move
 
         newSubcommand.initialize()
         return newSubcommand
 
-    def tryGetTargetDirection(self):
+    def findDirectionFromCamera(self):
         # 1. do we have a freshly detected object from the camera
         t, index, (x, y), size = self.camera0.get_detected_object()
         # ^^ this only works if camera0 is CVCamera, but if you have Limelight/PhotonVision/something else, see below:
@@ -131,5 +129,5 @@ class FollowObject(commands2.Command):
         # 3. otherwise we are not done: pick a target direction for the robot to go
         currentDirection = self.drivetrain.getHeading()
         directionToObjectCenter = Rotation2d.fromDegrees(-x)
-        self.targetDirection = currentDirection.rotateBy(directionToObjectCenter)
+        return currentDirection.rotateBy(directionToObjectCenter)
 
