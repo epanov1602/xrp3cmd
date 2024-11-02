@@ -33,7 +33,7 @@ class FollowObject(commands2.Command):
     def __init__(self, camera: CVCamera, drivetrain: Drivetrain, fwd_step_seconds=0.25, stop_when: StopWhen=None):
         super().__init__()
 
-        self.targetCamera = camera
+        self.camera0 = camera
         self.stopWhen = stop_when
         self.fwdStepSeconds = fwd_step_seconds
         self.drivetrain = drivetrain
@@ -60,7 +60,7 @@ class FollowObject(commands2.Command):
 
         # 2. otherwise, if target direction is at least known, make that subcommand to go in that direction
         elif self.targetDirection is not None:
-            self.subcommand = self.makeSubcommandToGoInTargetDirection()
+            self.subcommand = self.makeSubcommand()
 
         # 3. but if target direction is not known at all, look at the camera and find in which target direction to go
         else:
@@ -78,7 +78,7 @@ class FollowObject(commands2.Command):
         if self.finished:
             return True  # otherwise, if we are thinking we are finished, then we are
 
-    def makeSubcommandToGoInTargetDirection(self):
+    def makeSubcommand(self):
         degreesFromTarget = (self.drivetrain.getHeading() - self.targetDirection).degrees()
         self.targetDirection = None  # target direction will need to be recalculated after subcommand stops
         self.minDetectionIndex = None
@@ -96,7 +96,19 @@ class FollowObject(commands2.Command):
 
     def tryGetTargetDirection(self):
         # 1. do we have a freshly detected object from the camera
-        t, index, (x, y), size = self.targetCamera.get_detected_object()
+        t, index, (x, y), size = self.camera0.get_detected_object()
+        # ^^ this only works if camera0 is CVCamera, but if you have Limelight/PhotonVision/something else, see below:
+        #
+        # - if you are using a Limelight camera, you can use code from
+        #     https://github.com/epanov1602/CommandRevSwerve/blob/main/Adding_Camera.md
+        #   and this line above should be changed to:
+        #     index, x, y, size = self.camera0.getHB(), self.camera0.getX(), self.camera0.getY(), self.camera0.getA()
+        #
+        # - if you are using PhotonVision, you probably have enough experience to modify the LimelightCamera code from
+        #   the example above to use the following fields arriving via NetworkTables:
+        #     "targetPitch", "targetYaw", "targetArea", but have to synthesize your own 'index' out of "rawBytes" field
+        #   (more information is here : https://docs.photonvision.org/en/latest/docs/additional-resources/nt-api.html)
+
         if self.minDetectionIndex is None:
             self.minDetectionIndex = index + 1
             return  # we don't know if we are looking at an old video frame or fresh one => try again at the next frame
