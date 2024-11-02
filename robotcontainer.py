@@ -51,8 +51,16 @@ class RobotContainer:
         def apriltag_detector(frame, tracker, previous_bbox, only_these_ids=None):
             return detection.detect_biggest_apriltag(apriltag_detector_model, frame, only_these_ids, tracker)
 
-        self.camera = CVCamera(80, 60, 10)  #, detector=apriltag_detector)
-        self.camera.start()
+        ## 3. YOLO detector for objects from Microsoft COCO dataset
+        ## to make this work, you need to run "pip install ultralytics" in your terminal
+
+        #from ultralytics import YOLO
+        #gamepiece_detector_model = YOLO("yolov10m.pt")
+        #def gamepiece_detector(frame, tracker, previous_bbox, classes=["sports ball", "cell phone",]):
+        #    return detection.detect_yolo_object(gamepiece_detector_model, frame, valid_classes=classes, tracker=tracker)
+
+        self.camera = CVCamera(150, 120, 10, detector=apriltag_detector)
+        self.camera.start("http://192.168.42.21:81/stream")  # default XRP camera URL
 
         # Assume that joystick "j0" is plugged into channel 0
         self.j0 = CommandXboxController(0)

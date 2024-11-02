@@ -62,8 +62,6 @@ class CVCamera(commands2.Subsystem):
 
     def start(self, *args, **kwargs):
         assert self.camera is None, "start() was already called once"
-        if len(args) == 0 and len(kwargs) == 0:
-            args = ["http://192.168.42.21:81/stream"]  # default XRP camera URL
 
         print(f"Trying to start a web camera with args={args}, kwargs={kwargs}")
         self.camera = cv2.VideoCapture(*args, **kwargs)
@@ -114,8 +112,8 @@ class CVCamera(commands2.Subsystem):
             center_x, center_y = x + 0.5 * w, y + 0.5 * h
             frame_height, frame_width = self.last_detected_frame.shape[0], self.last_detected_frame.shape[1]
             self.last_detected_center_degrees = (
-                self.horizontal_fov_degrees * (2 * center_x - frame_width) / frame_width,
-                self.vertical_fov_degrees * (frame_height - 2 * center_y) / frame_height,
+                self.horizontal_fov_degrees * (center_x - 0.5 * frame_width) / frame_width,
+                self.vertical_fov_degrees * (0.5 * frame_height - center_y) / frame_height,
             )
             self.last_detected_size_degrees = (
                 self.horizontal_fov_degrees * (w / frame_width),
@@ -123,9 +121,10 @@ class CVCamera(commands2.Subsystem):
             )
             self.last_valid_detected_center_degrees = self.last_detected_center_degrees
             if draw:
+                index = self.last_detected_index
                 size = max(self.last_detected_size_degrees)
-                text = "x:{:.0f}, y:{:.0f}, size: {:.0f}".format(
-                    self.last_detected_center_degrees[0], self.last_detected_center_degrees[1], size
+                text = "x:{:.0f}, y:{:.0f}, size: {:.0f}, ix: {}".format(
+                    self.last_detected_center_degrees[0], self.last_detected_center_degrees[1], size, index
                 )
                 cv2.putText(
                     self.last_detected_frame, text, (x, y - 10),
