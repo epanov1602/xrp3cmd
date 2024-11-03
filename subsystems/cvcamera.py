@@ -41,8 +41,6 @@ class CVCamera(commands2.Subsystem):
         self.horizontal_fov_degrees = horizontal_fov_degrees
         self.vertical_fov_degrees = vertical_fov_degrees
 
-        self.lock = Lock()
-
         CVCamera.instance_count += 1
         self.window_name = f"robot camera {CVCamera.instance_count}"
         cv2.namedWindow(self.window_name)
@@ -54,20 +52,21 @@ class CVCamera(commands2.Subsystem):
                     if roi is not None:
                         self.tracker.init(self.last_detected_frame, roi)
 
-            self.mouse_callback = mouse_callback
-            cv2.setMouseCallback(self.window_name, self.mouse_callback)
+            self._mouse_callback = mouse_callback
+            cv2.setMouseCallback(self.window_name, self._mouse_callback)
 
-        self.camera = None
+        self._lock = Lock()
+        self._camera = None
         self._background_worker = None
 
     def start(self, *args, **kwargs):
-        assert self.camera is None, "start() was already called once"
+        assert self._camera is None, "start() was already called once"
 
         print(f"Trying to start a web camera with args={args}, kwargs={kwargs}")
-        self.camera = cv2.VideoCapture(*args, **kwargs)
-        if not self.camera.isOpened():
+        self._camera = cv2.VideoCapture(*args, **kwargs)
+        if not self._camera.isOpened():
             print(f"ERROR: failed to open a video capture with args={args}, kwargs={kwargs}")
-            self.camera = None
+            self._camera = None
             return
 
         self._background_worker = Thread(target=self._background_work, daemon=True)
@@ -85,7 +84,7 @@ class CVCamera(commands2.Subsystem):
         t = Timer.getFPGATimestamp()
         if t - self.last_detected_time < 0.5 / self.max_fps:
             return  # too early to detect again
-        with self.lock:
+        with self._lock:
             frame, index = self.frame, self.frame_index
         if index == self.last_detected_index or frame is None:
             return  # nothing new to detect
@@ -148,12 +147,12 @@ class CVCamera(commands2.Subsystem):
                 thickness=2,
             )
         roi = cv2.selectROI(self.window_name, inverted, showCrosshair=False)
-        cv2.setMouseCallback(self.window_name, self.mouse_callback)
+        cv2.setMouseCallback(self.window_name, self._mouse_callback)
         return roi
 
 
     def _background_work(self):
-        while self.camera is not None:
+        while self._camera is not None:
             self._next_frame()
 
     def _next_frame(self):
@@ -161,13 +160,13 @@ class CVCamera(commands2.Subsystem):
         # (catch up by discarding the old frames sitting in the queue)
         t = Timer.getFPGATimestamp()
         while True:
-            self.camera.grab()
+            self._camera.grab()
             after = Timer.getFPGATimestamp()
             if after - t > 0.010:
                 break  # if this took us more than 10ms to get next frame, it was fresh
             t = after
-        success, frame = self.camera.retrieve()  # and decode just that last frame
+        success, frame = self._camera.retrieve()  # and decode just that last frame
         if success:
-            with self.lock:
+            with self._lock:
                 self.frame = frame
                 self.frame_index += 1
