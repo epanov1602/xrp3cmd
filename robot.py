@@ -28,13 +28,32 @@ import commands2
 
 from robotcontainer import RobotContainer
 
-def find_robot_ip():
-    import requests
-    pass
 
-# If your XRP isn't at the default address, set that here
-os.environ["HALSIMXRP_HOST"] = "192.168.42.22"  # use '.22' or '.23' if using XRP XIAO ESP32S camera (otherwise, use '.1')
+def find_xrp_ip_address(attempts=3):
+    import requests
+
+    for attempt in range(attempts):
+        for ip in [
+            "192.168.42.1",
+            "192.168.42.22",
+            "192.168.42.23",
+            "192.168.42.24",
+            "192.168.42.25",
+            "192.168.42.25",
+        ]:
+            try:
+                r = requests.get(f'http://{ip}:5000', timeout=3)
+                r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
+                return ip
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                print(f"Robot not available at {ip}: {e}")
+
+    raise Exception("Cannot find an XRP robot at any IP addresses tried. Are we connected to the right WiFi network?")
+
+
+# If your XRP isn't at the default port, set that here
 os.environ["HALSIMXRP_PORT"] = "3540"
+os.environ["HALSIMXRP_HOST"] = find_xrp_ip_address()
 
 
 class MyRobot(commands2.TimedCommandRobot):
