@@ -62,7 +62,7 @@ class CVCamera(commands2.Subsystem):
     def start(self, *args, **kwargs):
         assert self._camera is None, "start() was already called once"
 
-        print(f"Trying to start a web camera with args={args}, kwargs={kwargs}")
+        print(f"Trying to start an OpenCV VideoCapture with args={args}, kwargs={kwargs}")
         self._camera = cv2.VideoCapture(*args, **kwargs)
         if not self._camera.isOpened():
             print(f"ERROR: failed to open a video capture with args={args}, kwargs={kwargs}")
