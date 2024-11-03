@@ -28,7 +28,7 @@ class StopWhen:
 
 
 class FollowObject(commands2.Command):
-    ANGLE_TOLERANCE = 30  # if pointing further away than this, do not move forward (but rotate to the object first)
+    ANGLE_TOLERANCE = 30  # if pointing further away than this, do not move forward (rotate towards the object first)
 
     def __init__(self, camera: CVCamera, drivetrain: Drivetrain, fwd_step_seconds=0.25, stop_when: StopWhen=None):
         super().__init__()
