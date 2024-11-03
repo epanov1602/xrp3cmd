@@ -1,12 +1,10 @@
 import cv2
 import commands2
 
-from helpers.detection import detect_biggest_apriltag, detect_biggest_face
 from helpers import detection
 
-from wpilib import SmartDashboard, Timer
+from wpilib import Timer
 from threading import Lock, Thread
-import pupil_apriltags as apriltags
 
 
 class CVCamera(commands2.Subsystem):
