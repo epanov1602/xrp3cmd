@@ -59,7 +59,7 @@ class RobotContainer:
         #def gamepiece_detector(frame, tracker, previous_bbox, classes=["sports ball", "cell phone",]):
         #    return detection.detect_yolo_object(gamepiece_detector_model, frame, valid_classes=classes, tracker=tracker)
 
-        self.camera = CVCamera(150, 120, 10, detector=apriltag_detector)
+        self.camera = CVCamera(150, 120, 10)  #, detector=apriltag_detector)
         self.camera.start("http://192.168.42.21:81/stream")  # default XRP camera URL
 
         # Assume that joystick "j0" is plugged into channel 0
@@ -70,6 +70,9 @@ class RobotContainer:
 
     def configureButtonBindings(self):
         """Use this method to define your button->command mappings"""
+
+        follow_object = FollowObject(self.camera, self.drivetrain, fwd_step_seconds=0)
+        self.j0.b().whileTrue(follow_object)
 
         # 1. Here is a command to drive forward 10 inches with speed 0.9
         forward30inches = GoToPoint(x=30, y=0, drivetrain=self.drivetrain)
@@ -138,9 +141,6 @@ class RobotContainer:
         # ("by default" means it will stop running when some other command is asked
         # to use drivetrain, and will restart running after that other command is done)
         self.drivetrain.setDefaultCommand(drive)
-
-        stopWhen = StopWhen(aimingToleranceDegrees=0.0001)
-        self.j0.button(1).onTrue(FollowObject(self.camera, self.drivetrain))
 
     def getAutonomousCommand(self):
         resetOdometry = InstantCommand(self.drivetrain.resetOdometry)
