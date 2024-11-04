@@ -67,8 +67,9 @@ class FollowObject(commands2.Command):
 
         if abs(degreesFromTarget) < FollowObject.ANGLE_TOLERANCE and self.fwdStepSeconds > 0:
             # 1. if robot is mostly aiming in correct direction already, just make a step in that direction
-            drive = DriveDistance(speed=1.0, inches=999, drivetrain=self.drivetrain)
-            ## drive = AimToDirection(direction.degrees(), self.drivetrain, fwd_speed=1.0)
+            drive = AimToDirection(direction.degrees(), self.drivetrain, fwd_speed=1.0)
+            ## or you can simply use this:
+            # drive = DriveDistance(speed=1.0, inches=999, drivetrain=self.drivetrain)
             newSubcommand = drive.withTimeout(self.fwdStepSeconds)  # add a correct timeout for the step
         else:
             # 2. rotate if robot is pointing too far from the object or if we aren't supposed to make steps forward
