@@ -53,7 +53,6 @@ class RobotContainer:
 
         ## 3. YOLO detector for objects from Microsoft COCO dataset
         ## to make this work, you need to run "pip install ultralytics" in your terminal
-
         #from ultralytics import YOLO
         #gamepiece_detector_model = YOLO("yolov10m.pt")
         #def gamepiece_detector(frame, tracker, previous_bbox, classes=["sports ball", "cell phone",]):
