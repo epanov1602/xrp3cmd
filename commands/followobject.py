@@ -49,7 +49,7 @@ class FollowObject(commands2.Command):
 
     def execute(self):
         # 1. if there is subcommand to go in some direction, just work on executing it
-        if self.subcommand is None:
+        if self.subcommand is not None:
             if self.subcommand.isFinished():
                 self.subcommand.end(False)  # if subcommand is finished, we must end() it
                 self.subcommand = None  # and we don't have it anymore
@@ -61,18 +61,6 @@ class FollowObject(commands2.Command):
             direction = self.findDirectionFromCamera()
             if direction is not None:
                 self.subcommand = self.makeSubcommand(direction)
-
-    def end(self, interrupted: bool):
-        if self.subcommand is not None:
-            self.subcommand.end(interrupted)
-            self.subcommand = None
-        self.drivetrain.arcadeDrive(0, 0)
-
-    def isFinished(self) -> bool:
-        if self.subcommand:
-            return False  # if subcommand is here, it is not finished yet
-        if self.finished:
-            return True  # otherwise, if we are thinking we are finished, then we are
 
     def makeSubcommand(self, direction):
         degreesFromTarget = (self.drivetrain.getHeading() - direction).degrees()
@@ -88,9 +76,20 @@ class FollowObject(commands2.Command):
             newSubcommand = turn
 
         self.minDetectionIndex = None  # invalidate the current detection, because the robot is about to move
-
         newSubcommand.initialize()
         return newSubcommand
+
+    def end(self, interrupted: bool):
+        if self.subcommand is not None:
+            self.subcommand.end(interrupted)
+            self.subcommand = None
+        self.drivetrain.arcadeDrive(0, 0)
+
+    def isFinished(self) -> bool:
+        if self.subcommand:
+            return False  # if subcommand is here, it is not finished yet
+        if self.finished:
+            return True  # otherwise, if we are thinking we are finished, then we are
 
     def findDirectionFromCamera(self):
         # 1. do we have a freshly detected object from the camera
