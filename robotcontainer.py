@@ -35,7 +35,7 @@ class RobotContainer:
     subsystems, commands, and button mappings) should be declared here.
     """
 
-    def __init__(self):
+    def __init__(self, simulation=False):
         # The robot's subsystems are defined here
         self.drivetrain = Drivetrain()
         self.arm = Arm()
@@ -59,7 +59,10 @@ class RobotContainer:
         #    return detection.detect_yolo_object(gamepiece_detector_model, frame, valid_classes=classes, tracker=tracker)
 
         self.camera = CVCamera(150, 120, 10)  #, detector=apriltag_detector)
-        self.camera.start("http://192.168.42.21:81/stream")  # default XRP camera URL
+        if simulation:
+            self.camera.start(0)  # camera of your laptop
+        else:
+            self.camera.start("http://192.168.42.21:81/stream")  # default XRP camera URL
 
         # Assume that joystick "j0" is plugged into channel 0
         self.j0 = CommandXboxController(0)
