@@ -29,7 +29,7 @@ import commands2
 from robotcontainer import RobotContainer
 
 RUN_IN_SIMULATION = False
-
+NO_CAMERA = True
 
 def find_xrp_ip_address(attempts=3):
     if RUN_IN_SIMULATION:
@@ -77,7 +77,7 @@ class MyRobot(commands2.TimedCommandRobot):
 
         # Instantiate our RobotContainer.  This will perform all our button bindings, and put our
         # autonomous chooser on the dashboard.
-        self.container = RobotContainer(RUN_IN_SIMULATION)
+        self.container = RobotContainer(RUN_IN_SIMULATION or NO_CAMERA)
 
     def disabledInit(self) -> None:
         """This function is called once each time the robot enters Disabled mode."""

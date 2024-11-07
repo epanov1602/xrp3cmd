@@ -18,6 +18,7 @@ from wpilib import SmartDashboard, Timer
 class Drivetrain(commands2.Subsystem):
     kCountsPerRevolution = 585.0
     kWheelDiameterInch = 2.3622
+    kWheelBaseWidthInch = 10.0  # is it 10 inches?
     kMinProductiveEffort = 0.4  # control signal smaller than this might not result in XRP motor spinning
 
     def __init__(self, maxAcceleration: float = 999) -> None:

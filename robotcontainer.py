@@ -22,6 +22,7 @@ from subsystems.cvcamera import CVCamera
 from subsystems.arm import Arm
 from subsystems.stopwatch import Stopwatch
 
+from commands.drivetrajectory import DriveTrajectory
 from commands.followobject import FollowObject, StopWhen
 from commands.aimtodirection import AimToDirection
 from commands.gotopoint import GoToPoint
@@ -149,18 +150,11 @@ class RobotContainer:
         startStopwatch = InstantCommand(self.stopwatch.start)
         stopStopwatch = InstantCommand(self.stopwatch.stop)
 
-        # a little race with stopwatch
-        autoCommand = (resetOdometry
-                       .andThen(startStopwatch)
-                       .andThen(GoToPoint(35, 0, self.drivetrain, 1.0, slowDownAtFinish=False))
-                       .andThen(GoToPoint(40.5, 5, self.drivetrain, 1.0, slowDownAtFinish=False))
-                       .andThen(GoToPoint(37, 15, self.drivetrain, 1.0, slowDownAtFinish=True))
+        from wpimath.geometry import Translation2d, Pose2d
 
-                       .andThen(GoToPoint(-2, 39, self.drivetrain, 1.0, slowDownAtFinish=True))
-                       .andThen(GoToPoint(0, 0, self.drivetrain, 1.0, slowDownAtFinish=True))
-                       .andThen(stopStopwatch))
-
-        return autoCommand
+        return resetOdometry.andThen(DriveTrajectory(
+            self.drivetrain, Pose2d(120, 0, 0), [Translation2d(40, 40), Translation2d(80, -40)]
+        ))
 
     def teleopInit(self):
         self.drivetrain.resetOdometry()
