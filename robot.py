@@ -29,7 +29,7 @@ import commands2
 from robotcontainer import RobotContainer
 
 RUN_IN_SIMULATION = False
-NO_CAMERA = True
+NO_CAMERA = False
 
 def find_xrp_ip_address(attempts=3):
     if RUN_IN_SIMULATION:
