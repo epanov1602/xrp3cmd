@@ -9,6 +9,8 @@ import cv2
 import pupil_apriltags as apriltags
 
 import wpilib
+from wpimath.geometry import Translation2d, Pose2d, Rotation2d
+
 import commands2
 from commands2.button import CommandXboxController
 from commands2 import InstantCommand, WaitCommand
@@ -24,6 +26,7 @@ from subsystems.stopwatch import Stopwatch
 
 from commands.drivetrajectory import DriveTrajectory
 from commands.followobject import FollowObject, StopWhen
+from commands.findobject import FindObject
 from commands.aimtodirection import AimToDirection
 from commands.gotopoint import GoToPoint
 from helpers import detection
@@ -59,7 +62,7 @@ class RobotContainer:
         #def gamepiece_detector(frame, tracker, previous_bbox, classes=["sports ball", "cell phone",]):
         #    return detection.detect_yolo_object(gamepiece_detector_model, frame, valid_classes=classes, tracker=tracker)
 
-        self.camera = CVCamera(150, 120, 10)  #, detector=apriltag_detector)
+        self.camera = CVCamera(150, 120, 10, detector=apriltag_detector)
         if simulation:
             self.camera.start(0)  # camera of your laptop
         else:
@@ -146,15 +149,50 @@ class RobotContainer:
         self.drivetrain.setDefaultCommand(drive)
 
     def getAutonomousCommand(self):
-        resetOdometry = InstantCommand(self.drivetrain.resetOdometry)
-        startStopwatch = InstantCommand(self.stopwatch.start)
-        stopStopwatch = InstantCommand(self.stopwatch.stop)
+        #startStopwatch = InstantCommand(self.stopwatch.start)
+        #stopStopwatch = InstantCommand(self.stopwatch.stop)
 
-        from wpimath.geometry import Translation2d, Pose2d
+        # option 0: use points
+        resetOdometry0 = InstantCommand(self.drivetrain.resetOdometry)
+        pointA = GoToPoint(120, 0, self.drivetrain)
+        pointB = GoToPoint(0, 0, self.drivetrain)
+        auto0 = resetOdometry0.andThen(pointA).andThen(pointB)
 
-        return resetOdometry.andThen(DriveTrajectory(
-            self.drivetrain, Pose2d(120, 0, 0), [Translation2d(40, 40), Translation2d(80, -40)]
-        ))
+
+        # option 1: use trajectories (here it goes to 120 inches ahead, but follows the waypoints for an S curve)
+        resetOdometry1 = InstantCommand(self.drivetrain.resetOdometry)
+        trajectoryA = DriveTrajectory(
+            self.drivetrain,
+            endpoint=Pose2d(80, 0, Rotation2d.fromDegrees(0)),
+            waypoints=[Translation2d(10, 0), Translation2d(30, 30), Translation2d(30, -30)],
+        )
+        trajectoryB = DriveTrajectory(
+            self.drivetrain,
+            endpoint=Pose2d(0, 0, Rotation2d.fromDegrees(180)),
+            waypoints=[Translation2d(70, 0), Translation2d(30, -30), Translation2d(30, 30)],
+        )
+        auto1 = resetOdometry1.andThen(trajectoryA).andThen(trajectoryB)
+
+
+        # option 2: use visual navigation -- find object and follow object, then find next one etc.
+        resetOdometry2 = InstantCommand(self.drivetrain.resetOdometry)
+
+        findA = FindObject(self.camera, self.drivetrain, step_degrees=+15)
+        followA = FollowObject(self.camera, self.drivetrain, stop_when=StopWhen(maxSize=26))
+        chargeA = DriveDistance(speed=1.0, inches=10, drivetrain=self.drivetrain)
+
+        findB = FindObject(self.camera, self.drivetrain, step_degrees=-15)
+        followB = FollowObject(self.camera, self.drivetrain, stop_when=StopWhen(maxSize=26))
+        chargeB = DriveDistance(speed=1.0, inches=10, drivetrain=self.drivetrain)
+
+        auto2 = (resetOdometry2
+                 .andThen(findA).andThen(followA).andThen(chargeA)
+                 .andThen(findB).andThen(followB).andThen(chargeB)
+                 )
+
+
+        # which auto will you use?
+        return auto0
 
     def teleopInit(self):
         self.drivetrain.resetOdometry()

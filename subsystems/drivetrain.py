@@ -20,6 +20,7 @@ class Drivetrain(commands2.Subsystem):
     kWheelDiameterInch = 2.3622
     kWheelBaseWidthInch = 10.0  # is it 10 inches?
     kMinProductiveEffort = 0.4  # control signal smaller than this might not result in XRP motor spinning
+    kMaxSpeed = 18  # inches per second
 
     def __init__(self, maxAcceleration: float = 999) -> None:
         super().__init__()

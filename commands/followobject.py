@@ -41,7 +41,7 @@ class FollowObject(commands2.Command):
 
         self.finished = False
         self.minDetectionIndex = None
-        self.subcommand: commands2.Command = None
+        self.subcommand = None
 
     def initialize(self):
         self.finished = False
@@ -87,10 +87,11 @@ class FollowObject(commands2.Command):
         self.drivetrain.arcadeDrive(0, 0)
 
     def isFinished(self) -> bool:
-        if self.subcommand:
+        if self.subcommand is not None:
             return False  # if subcommand is here, it is not finished yet
         if self.finished:
             return True  # otherwise, if we are thinking we are finished, then we are
+        print("not finished anyway")
 
     def findDirectionFromCamera(self):
         # 1. do we have a freshly detected object from the camera
