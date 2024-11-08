@@ -1,14 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="robotpy-sim" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="robot-without-camera" type="PythonConfigurationType" factoryName="Python">
     <module name="xrp3cmd" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
+      <env name="NO_CAMERA" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
-    <option name="SDK_NAME" value="Python 3.9 (xrp2cmd)" />
+    <option name="SDK_NAME" value="Python 3.9 (xrp3cmd)" />
     <option name="WORKING_DIRECTORY" value="" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
