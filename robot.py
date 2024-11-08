@@ -28,11 +28,11 @@ import commands2
 
 from robotcontainer import RobotContainer
 
-RUN_IN_SIMULATION = False
-NO_CAMERA = False
+NO_ROBOT = os.getenv("XRP3_NO_ROBOT", "0") != "0"
+NO_CAMERA = os.getenv("XRP3_NO_CAMERA", "0") != "0"
 
 def find_xrp_ip_address(attempts=3):
-    if RUN_IN_SIMULATION:
+    if NO_ROBOT:
         return ""
 
     import requests
@@ -51,7 +51,7 @@ def find_xrp_ip_address(attempts=3):
                 r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
                 return ip
             except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                print(f"Robot not available at {ip}: {e}")
+                print(f"Robot not available to connect at {ip}: {e}")
 
     raise Exception("Cannot find an XRP robot at any IP addresses tried. Are we connected to the right WiFi network?")
 
@@ -77,7 +77,7 @@ class MyRobot(commands2.TimedCommandRobot):
 
         # Instantiate our RobotContainer.  This will perform all our button bindings, and put our
         # autonomous chooser on the dashboard.
-        self.container = RobotContainer(RUN_IN_SIMULATION or NO_CAMERA)
+        self.container = RobotContainer(NO_ROBOT or NO_CAMERA)
 
     def disabledInit(self) -> None:
         """This function is called once each time the robot enters Disabled mode."""
