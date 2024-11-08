@@ -154,7 +154,7 @@ class RobotContainer:
 
         # option 0: use points
         resetOdometry0 = InstantCommand(self.drivetrain.resetOdometry)
-        pointA = GoToPoint(120, 0, self.drivetrain)
+        pointA = GoToPoint(97, 0, self.drivetrain)
         pointB = GoToPoint(0, 0, self.drivetrain)
         auto0 = resetOdometry0.andThen(pointA).andThen(pointB)
 
