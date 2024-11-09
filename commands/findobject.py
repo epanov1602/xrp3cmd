@@ -23,7 +23,7 @@ class FindObject(commands2.Command):
         self.addRequirements(drivetrain)
 
         speed = +1.0 if step_degrees > 0 else -1.0
-        self.subcommand = (RotateAngle(speed, abs(step_degrees), self.drivetrain).andThen(WaitCommand(pause_seconds)))
+        self.subcommand = WaitCommand(pause_seconds).andThen(RotateAngle(speed, abs(step_degrees), self.drivetrain))
         self.minDetectionIndex = None
 
     def initialize(self):
