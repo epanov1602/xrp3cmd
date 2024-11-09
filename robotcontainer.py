@@ -151,16 +151,15 @@ class RobotContainer:
     def getAutonomousCommand(self):
         #startStopwatch = InstantCommand(self.stopwatch.start)
         #stopStopwatch = InstantCommand(self.stopwatch.stop)
+        #resetOdometry0 = InstantCommand(self.drivetrain.resetOdometry)
 
         # option 0: use points
-        resetOdometry0 = InstantCommand(self.drivetrain.resetOdometry)
         pointA = GoToPoint(97, 0, self.drivetrain)
         pointB = GoToPoint(0, 0, self.drivetrain)
-        auto0 = resetOdometry0.andThen(pointA).andThen(pointB)
+        auto0 = pointA.andThen(pointB)
 
 
         # option 1: use trajectories (here it goes to 120 inches ahead, but follows the waypoints for an S curve)
-        resetOdometry1 = InstantCommand(self.drivetrain.resetOdometry)
         trajectoryA = DriveTrajectory(
             self.drivetrain,
             endpoint=Pose2d(80, 0, Rotation2d.fromDegrees(0)),
@@ -171,7 +170,7 @@ class RobotContainer:
             endpoint=Pose2d(0, 0, Rotation2d.fromDegrees(180)),
             waypoints=[Translation2d(70, 0), Translation2d(30, -30), Translation2d(30, 30)],
         )
-        auto1 = resetOdometry1.andThen(trajectoryA).andThen(trajectoryB)
+        auto1 = trajectoryA.andThen(trajectoryB)
 
 
         # option 2: use visual navigation -- find object and follow object, then find next one etc.
@@ -195,4 +194,7 @@ class RobotContainer:
         return auto0
 
     def teleopInit(self):
+        self.drivetrain.resetOdometry()
+
+    def autonomousInit(self):
         self.drivetrain.resetOdometry()
