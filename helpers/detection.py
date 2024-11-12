@@ -23,6 +23,12 @@ COCO_CLASSNAMES = [
 def detect_biggest_apriltag(detector, frame, only_these_ids=None, tracker=None):
     return detect_or_track(frame, tracker, lambda: _detect_biggest_apriltag(detector, frame, only_these_ids))
 
+def detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, previous_xywh=None, tracker=None):
+    def detector(img):
+        return _detect_biggest_ball(img, color_hue_range, smallest_size_px, previous_xywh=previous_xywh)
+    return detect_or_track(frame, tracker, detector=detector)
+
+
 def detect_biggest_face(face_detector, frame, previous_xywh=None, tracker=None):
     return detect_or_track(frame, tracker, lambda: _detect_biggest_face(face_detector, frame, previous_xywh=previous_xywh))
 
@@ -214,6 +220,99 @@ def _detect_biggest_face(face_detector, frame, draw_boxes=False, previous_xywh=N
         return biggest_face
     # if there were no faces, return (None, None, None, None)
     return None, None, None, None
+
+
+def _detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, draw_boxes=False, previous_xywh=None):
+    """
+    Use HAAR cascade detector to detect faces (picks the widest one, if many found)
+    :param frame: a video frame, color or grayscale
+    :param face_detector: cascade face detector
+    :return: (x, y, w, h) bounding box or (None, None, None, None)
+    """
+    balls = detect_circles(frame, color_hue_range=color_hue_range, smallest_size_pixels=smallest_size_px)
+    if previous_xywh is not None and previous_xywh[0] is None: previous_xywh = None
+
+    biggest_w = 0  # this will be the width of the biggest ball
+    nearest_distance = None
+    biggest_ball = None
+    nearest_ball = None
+    for index, ((center_x, center_y), radius) in enumerate(balls):
+        x, y, w, h = center_x - radius, center_y - radius, radius * 2, radius * 2
+        if w > biggest_w:
+            biggest_w = w
+            biggest_ball = x, y, w, h
+        if previous_xywh is not None:
+            px, py, pw, ph = previous_xywh
+            distance = abs((x + w * 0.5) - (px + pw * 0.5)) + abs((y + 0.5 * h) - (py + ph * 0.5))
+            if nearest_distance is None or distance < nearest_distance:
+                nearest_distance = distance
+                nearest_ball = x, y, w, h
+
+    if nearest_ball is not None:
+        return nearest_ball
+    if biggest_ball is not None:
+        return biggest_ball
+
+    # if there were no balls, return (None, None, None, None)
+    return None, None, None, None
+
+
+def detect_circles(frame,
+                   color_hue_range=(13, 27),
+                   color_sat_range=(100, 255),
+                   color_val_range=(100, 255),
+                   smallest_size_pixels=10,
+                   smallest_circularity=0.5):
+    """
+    :param frame:
+    :param color_hue_range: lower and upper bounds for color between 0 and 255 (0 = red)
+    :param color_sat_range: lower and upper bounds for saturation (0 = gray, 255 = saturated)
+    :param color_val_range: lower and upper bounds for value (0 = black, 255 = bright)
+    :param smallest_size_pixels: circles smaller than this size will be ignored
+    :param smallest_circularity: circles that aren't very circular (e.g. less than 50%) will be thrown out
+    :return: list of ((center_x, center_y), radius) for detected circles
+    """
+    import numpy as np
+
+    # Convert frame to HSV color space
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # Define the lower and upper bounds for orange color
+    lower_orange = np.array([color_hue_range[0], color_sat_range[0], color_val_range[0]])
+    upper_orange = np.array([color_hue_range[1], color_sat_range[1], color_val_range[1]])
+
+    # Create a mask for orange color
+    mask = cv2.inRange(hsv, lower_orange, upper_orange)
+
+    # Apply morphological operations to reduce noise
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Detect balls based on contour properties
+    balls = []
+    for contour in contours:
+        # Calculate area and circularity
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)
+        circularity = 4 * np.pi * area / (perimeter ** 2) if perimeter > 0 else 0
+
+        # Filter contours based on area and circularity
+        if circularity > smallest_circularity and area > smallest_size_pixels * smallest_size_pixels:
+            # Calculate center and radius of the ball
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+            center = (int(x), int(y))
+            radius = int(radius)
+
+            # Draw circle around the ball
+            # cv2.circle(frame, center, radius, (0, 255, 0), 2)
+
+            # Add ball information to the list
+            balls.append((center, radius))
+
+    return balls
 
 
 def _detect_yolo_object(yolo_model, frame, valid_classes=("person", "car"), lowest_conf=0.3):
