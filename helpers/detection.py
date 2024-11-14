@@ -24,8 +24,8 @@ def detect_biggest_apriltag(detector, frame, only_these_ids=None, tracker=None):
     return detect_or_track(frame, tracker, lambda: _detect_biggest_apriltag(detector, frame, only_these_ids))
 
 def detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, previous_xywh=None, tracker=None):
-    def detector(img):
-        return _detect_biggest_ball(img, color_hue_range, smallest_size_px, previous_xywh=previous_xywh)
+    def detector():
+        return _detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_xywh=previous_xywh)
     return detect_or_track(frame, tracker, detector=detector)
 
 
@@ -226,7 +226,6 @@ def _detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, d
     """
     Use HAAR cascade detector to detect faces (picks the widest one, if many found)
     :param frame: a video frame, color or grayscale
-    :param face_detector: cascade face detector
     :return: (x, y, w, h) bounding box or (None, None, None, None)
     """
     balls = detect_circles(frame, color_hue_range=color_hue_range, smallest_size_pixels=smallest_size_px)
@@ -287,6 +286,7 @@ def detect_circles(frame,
     # Apply morphological operations to reduce noise
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
+    cv2.imshow("color hue mask", mask)
 
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

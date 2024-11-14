@@ -55,14 +55,19 @@ class RobotContainer:
         def apriltag_detector(frame, tracker, previous_bbox, only_these_ids=None):
             return detection.detect_biggest_apriltag(apriltag_detector_model, frame, only_these_ids, tracker)
 
-        ## 3. YOLO detector for objects from Microsoft COCO dataset
+        ## 3. detector for orange tennis balls?
+        def tennis_ball_detector(frame, tracker, previous_bbox, color_hue_range=(3, 15), smallest_size_px=20):
+            #return detection._detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_xywh=previous_bbox)
+            return detection.detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_bbox, tracker)
+
+        ## 4. YOLO detector for objects from Microsoft COCO dataset
         ## to make this work, you need to run "pip install ultralytics" in your terminal
         #from ultralytics import YOLO
         #gamepiece_detector_model = YOLO("yolov10m.pt")
         #def gamepiece_detector(frame, tracker, previous_bbox, classes=["sports ball", "cell phone",]):
         #    return detection.detect_yolo_object(gamepiece_detector_model, frame, valid_classes=classes, tracker=tracker)
 
-        self.camera = CVCamera(150, 120, 10, detector=apriltag_detector)
+        self.camera = CVCamera(150, 120, 10, detector=tennis_ball_detector)
         if nocamera:
             self.camera.start(0)  # camera of your laptop
         else:
