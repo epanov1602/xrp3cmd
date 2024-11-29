@@ -56,9 +56,10 @@ class RobotContainer:
             return detection.detect_biggest_apriltag(apriltag_detector_model, frame, only_these_ids, tracker)
 
         ## 3. detector for orange tennis balls?
-        def tennis_ball_detector(frame, tracker, previous_bbox, color_hue_range=(3, 15), smallest_size_px=20):
-            #return detection._detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_xywh=previous_bbox)
-            return detection.detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_bbox, tracker)
+        def tennis_ball_detector(frame, tracker, previous_bbox, color_hue_range=(5, 15), smallest_size_px=8):
+            return detection.detect_biggest_ball(
+                frame, color_hue_range, smallest_size_px, detectors="both", previous_xywh=previous_bbox, tracker=tracker,
+            )
 
         ## 4. YOLO detector for objects from Microsoft COCO dataset
         ## to make this work, you need to run "pip install ultralytics" in your terminal
@@ -194,6 +195,12 @@ class RobotContainer:
                  .andThen(findB).andThen(followB).andThen(chargeB)
                  )
 
+        turn = FindObject(self.camera, self.drivetrain, step_degrees=-15)
+        findobject = FollowObject(self. camera, self.drivetrain, stop_when=StopWhen(maxSize=15))
+        auto3 = (resetOdometry2
+                 .andThen(findobject).andThen(FollowObject) .andThen(findobject)
+                 .andThen(findobject) .andThen(FollowObject) .andThen(findobject)
+                 )
 
         # which auto will you use?
         return auto0

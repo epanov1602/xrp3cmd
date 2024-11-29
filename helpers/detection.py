@@ -1,4 +1,5 @@
 import typing
+import numpy as np
 import cv2
 
 GREEN = (127, 255, 0)
@@ -23,11 +24,10 @@ COCO_CLASSNAMES = [
 def detect_biggest_apriltag(detector, frame, only_these_ids=None, tracker=None):
     return detect_or_track(frame, tracker, lambda: _detect_biggest_apriltag(detector, frame, only_these_ids))
 
-def detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, previous_xywh=None, tracker=None):
+def detect_biggest_ball(frame, color_hue_range=(5, 15), smallest_size_px=8, detectors="both", previous_xywh=None, tracker=None):
     def detector():
-        return _detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_xywh=previous_xywh)
+        return _detect_biggest_ball(frame, color_hue_range, smallest_size_px, previous_xywh=previous_xywh, detectors=detectors)
     return detect_or_track(frame, tracker, detector=detector)
-
 
 def detect_biggest_face(face_detector, frame, previous_xywh=None, tracker=None):
     return detect_or_track(frame, tracker, lambda: _detect_biggest_face(face_detector, frame, previous_xywh=previous_xywh))
@@ -222,13 +222,20 @@ def _detect_biggest_face(face_detector, frame, draw_boxes=False, previous_xywh=N
     return None, None, None, None
 
 
-def _detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, draw_boxes=False, previous_xywh=None):
+def _detect_biggest_ball(frame, color_hue_range=(5, 15), smallest_size_px=6, previous_xywh=None, detectors="both"):
     """
-    Use HAAR cascade detector to detect faces (picks the widest one, if many found)
     :param frame: a video frame, color or grayscale
     :return: (x, y, w, h) bounding box or (None, None, None, None)
     """
-    balls = detect_circles(frame, color_hue_range=color_hue_range, smallest_size_pixels=smallest_size_px)
+    assert (
+        detectors in ("circles", "balls", "both")
+    ), f"detectors can be 'circles', 'balls' or 'both', not '{detectors}'"
+
+    balls = []
+    if detectors in ("circles", "both"):
+        balls.extend(detect_circles(frame, color_hue_range=color_hue_range, smallest_size_pixels=smallest_size_px))
+    if detectors in ("balls", "both"):
+        balls.extend(detect_balls(frame, color_hue_range=color_hue_range, smallest_size_pixels=smallest_size_px))
     if previous_xywh is not None and previous_xywh[0] is None: previous_xywh = None
 
     biggest_w = 0  # this will be the width of the biggest ball
@@ -257,11 +264,12 @@ def _detect_biggest_ball(frame, color_hue_range=(13, 27), smallest_size_px=10, d
 
 
 def detect_circles(frame,
-                   color_hue_range=(13, 27),
-                   color_sat_range=(100, 255),
-                   color_val_range=(100, 255),
+                   color_hue_range=(5, 15),
+                   color_sat_range=(137, 255),
+                   color_val_range=(56, 255),
                    smallest_size_pixels=10,
-                   smallest_circularity=0.5):
+                   smallest_circularity=0.5,
+                   erode=True):
     """
     :param frame:
     :param color_hue_range: lower and upper bounds for color between 0 and 255 (0 = red)
@@ -284,7 +292,8 @@ def detect_circles(frame,
     mask = cv2.inRange(hsv, lower_orange, upper_orange)
 
     # Apply morphological operations to reduce noise
-    mask = cv2.erode(mask, None, iterations=2)
+    if erode:
+        mask = cv2.erode(mask, None, iterations=1)
     mask = cv2.dilate(mask, None, iterations=2)
     cv2.imshow("color hue mask", mask)
 
@@ -306,13 +315,87 @@ def detect_circles(frame,
             center = (int(x), int(y))
             radius = int(radius)
 
-            # Draw circle around the ball
-            # cv2.circle(frame, center, radius, (0, 255, 0), 2)
-
             # Add ball information to the list
             balls.append((center, radius))
 
     return balls
+
+
+def detect_balls(image,
+                 color_hue_range=(5, 15),
+                 smallest_size_pixels=10,
+                 smallest_circularity=0.4):
+
+    # Create a copy for results
+    result = image.copy()
+
+    # Convert to HSV color space
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Define color ranges for tennis balls (yellow-green)
+    color_ranges = [
+        # Bright, well-lit tennis balls
+        (np.array([color_hue_range[0], 43, 126]), np.array([color_hue_range[1], 255, 255])),
+        # Slightly darker tennis balls
+        (np.array([color_hue_range[0], 137, 56]), np.array([color_hue_range[1], 255, 255]))
+    ]
+
+    # Combine masks from different color ranges
+    final_mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
+    for lower, upper in color_ranges:
+        mask = cv2.inRange(hsv, lower, upper)
+        final_mask = cv2.bitwise_or(final_mask, mask)
+
+    # Noise reduction and smoothing
+    kernel = np.ones((5, 5), np.uint8)
+    final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+    final_mask = cv2.GaussianBlur(final_mask, (5, 5), 0)
+
+    # Find contours of objects in yellow color
+    contours, _ = cv2.findContours(final_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Filter and draw contours
+    detected_balls = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+
+        # Filter by area (adjust these values based on your image size)
+        # You guys can play with this area to detect larger or smaller objects
+        if area > smallest_size_pixels * smallest_size_pixels:
+            # Calculate circularity
+            perimeter = cv2.arcLength(contour, True)
+            circularity = 4 * np.pi * area / (perimeter * perimeter) if perimeter > 0 else 0
+
+            # Filter by circularity
+            if circularity > smallest_circularity:  # Tennis balls should be fairly circular
+                # Get bounding circle
+                (x, y), radius = cv2.minEnclosingCircle(contour)
+                center = (int(x), int(y))
+                radius = int(radius)
+
+                # Calculate aspect ratio of bounding rect for additional verification
+                x, y, w, h = cv2.boundingRect(contour)
+                aspect_ratio = float(w) / h
+
+                # Only proceed if aspect ratio is close to 1 (circle)
+                if 0.75 < aspect_ratio < 1.25:
+                    # Draw the detection
+                    cv2.circle(result, center, radius, (0, 255, 0), 2)
+                    cv2.circle(result, center, 2, (0, 0, 255), -1)
+
+                    # Add measurements
+                    #cv2.putText(result, f'Ball ({int(area)}px)',
+                    #            (center[0] - 40, center[1] - 20),
+                    #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                    detected_balls.append((center, radius))
+
+    # Draw total count
+    #cv2.putText(result, f'Detected: {len(detected_balls)} balls',
+    #            (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+    return detected_balls
 
 
 def _detect_yolo_object(yolo_model, frame, valid_classes=("person", "car"), lowest_conf=0.3):
