@@ -56,7 +56,7 @@ class RobotContainer:
             return detection.detect_biggest_apriltag(apriltag_detector_model, frame, only_these_ids, tracker)
 
         ## 3. detector for orange tennis balls?
-        def tennis_ball_detector(frame, tracker, previous_bbox, color_hue_range=(5, 15), smallest_size_px=8):
+        def tennis_ball_detector(frame, tracker, previous_bbox, color_hue_range=(5, 15), smallest_size_px=7):
             return detection.detect_biggest_ball(
                 frame, color_hue_range, smallest_size_px, detectors="both", previous_xywh=previous_bbox, tracker=tracker,
             )
@@ -182,11 +182,11 @@ class RobotContainer:
         # option 2: use visual navigation -- find object and follow object, then find next one etc.
         resetOdometry2 = InstantCommand(self.drivetrain.resetOdometry)
 
-        findA = FindObject(self.camera, self.drivetrain, step_degrees=+15)
+        findA = FindObject(self.camera, self.drivetrain, step_degrees=-15)
         followA = FollowObject(self.camera, self.drivetrain, stop_when=StopWhen(maxSize=26))
         chargeA = DriveDistance(speed=1.0, inches=10, drivetrain=self.drivetrain)
 
-        findB = FindObject(self.camera, self.drivetrain, step_degrees=-15)
+        findB = FindObject(self.camera, self.drivetrain, step_degrees=15)
         followB = FollowObject(self.camera, self.drivetrain, stop_when=StopWhen(maxSize=26))
         chargeB = DriveDistance(speed=1.0, inches=10, drivetrain=self.drivetrain)
 
@@ -194,6 +194,7 @@ class RobotContainer:
                  .andThen(findA).andThen(followA).andThen(chargeA)
                  .andThen(findB).andThen(followB).andThen(chargeB)
                  )
+        return auto2
 
         turn = FindObject(self.camera, self.drivetrain, step_degrees=-15)
         findobject = FollowObject(self. camera, self.drivetrain, stop_when=StopWhen(maxSize=15))
