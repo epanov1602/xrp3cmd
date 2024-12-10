@@ -29,6 +29,8 @@ from commands.followobject import FollowObject, StopWhen
 from commands.findobject import FindObject
 from commands.aimtodirection import AimToDirection
 from commands.gotopoint import GoToPoint
+from commands.followline import FollowLine
+
 from helpers import detection
 
 class RobotContainer:
@@ -70,7 +72,8 @@ class RobotContainer:
 
         self.camera = CVCamera(150, 120, 10, detector=tennis_ball_detector)
         if nocamera:
-            self.camera.start(0)  # camera of your laptop
+            #self.camera.start(0)  # camera of your laptop
+            print("not starting camera at all")
         else:
             self.camera.start("http://192.168.42.21:81/stream")  # default XRP camera URL
 
@@ -155,6 +158,17 @@ class RobotContainer:
         self.drivetrain.setDefaultCommand(drive)
 
     def getAutonomousCommand(self):
+        # make the "get to line" command
+        driveForward = DriveDistance(speed=0.3, inches=50, drivetrain=self.drivetrain)
+        getToLine = driveForward.until(self.drivetrain.isAboveTape)
+
+        # make the "follow line" command
+        followLine = FollowLine(drivetrain=self.drivetrain)
+
+        # connect these two commands together
+        auto0 = getToLine.andThen(followLine)
+        return auto0
+
         #startStopwatch = InstantCommand(self.stopwatch.start)
         #stopStopwatch = InstantCommand(self.stopwatch.stop)
         #resetOdometry0 = InstantCommand(self.drivetrain.resetOdometry)

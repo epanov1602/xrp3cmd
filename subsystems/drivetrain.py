@@ -22,6 +22,8 @@ class Drivetrain(commands2.Subsystem):
     kMinProductiveEffort = 0.4  # control signal smaller than this might not result in XRP motor spinning
     kMaxSpeed = 18  # inches per second
 
+    kScotchBlueReflectance = 0.67
+
     def __init__(self, maxAcceleration: float = 999) -> None:
         super().__init__()
         self.leftSpeed = 0
@@ -100,6 +102,12 @@ class Drivetrain(commands2.Subsystem):
         self.leftSpeed = 0
         self.rightSpeed = 0
         self.arcadeDrive(0, 0)
+
+    def isAboveTape(self, minReflectance=kScotchBlueReflectance):
+        reflectance = self.reflectanceSensor
+        left, right = reflectance.getLeftReflectanceValue(), reflectance.getRightReflectanceValue()
+        if left < minReflectance and right < minReflectance:
+            return True  # both sensors are above something dark in infrared (for example, Scotch Blue tape)
 
     def resetEncoders(self) -> None:
         """Resets the drive encoders to currently read a position of 0."""
