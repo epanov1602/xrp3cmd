@@ -158,16 +158,6 @@ class RobotContainer:
         self.drivetrain.setDefaultCommand(drive)
 
     def getAutonomousCommand(self):
-        # make the "get to line" command
-        driveForward = DriveDistance(speed=0.3, inches=50, drivetrain=self.drivetrain)
-        getToLine = driveForward.until(self.drivetrain.isAboveTape)
-
-        # make the "follow line" command
-        followLine = FollowLine(drivetrain=self.drivetrain)
-
-        # connect these two commands together
-        auto0 = getToLine.andThen(followLine)
-        return auto0
 
         #startStopwatch = InstantCommand(self.stopwatch.start)
         #stopStopwatch = InstantCommand(self.stopwatch.stop)
