@@ -101,7 +101,9 @@ class FollowObject(commands2.Command):
         # - if you are using a Limelight camera, you can use code from
         #     https://github.com/epanov1602/CommandRevSwerve/blob/main/Adding_Camera.md
         #   and this line above should be changed to:
-        #     index, x, y, size = self.camera0.getHB(), self.camera0.getX(), self.camera0.getY(), self.camera0.getA()
+        # index, x, y, size = self.camera0.getHB(), self.camera0.getX(), self.camera0.getY(), [self.camera0.getA()]
+        # if x == 0.0 and y == 0.0:
+        #     x, y = None, None  # Limelight gives us 0.0 instead of None, when it didn't detect anything
         #
         # - if you are using PhotonVision, you probably have enough experience to modify the LimelightCamera code from
         #   the example above to use the following fields arriving via NetworkTables:
@@ -120,11 +122,11 @@ class FollowObject(commands2.Command):
 
         # 2. if that object was freshly detected, is that close enough for the command to finish?
         if self.stopWhen is not None:
+            if self.fwdStepSeconds == 0 and abs(x) < self.stopWhen.aimingToleranceDegrees:
+                self.finished = True  # already aiming at it pretty well and not allowed to move to it
+                return
             if max(size) > self.stopWhen.maxSize or y > self.stopWhen.maxY or y < self.stopWhen.minY:
                 self.finished = True  # looks like the object is very close now, time to finish
-                return
-            if self.fwdStepSeconds == 0 and abs(x) < self.stopWhen.aimingToleranceDegrees:
-                self.finished = True  # aiming at it pretty well and not allowed to move to it
                 return
 
         # 3. otherwise we are not done: pick a target direction for the robot to go
