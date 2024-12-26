@@ -21,6 +21,7 @@ class AimToDirectionConstants:
 
 class AimToDirection(commands2.Command):
     def __init__(self, degrees: float | typing.Callable[[], float], drivetrain: Drivetrain, speed=1.0, fwd_speed=0.0):
+        super().__init__()
         self.targetDegrees = degrees
         self.speed = min((1.0, abs(speed)))
         self.fwdSpeed = min((1.0, abs(fwd_speed)))
