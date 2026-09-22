@@ -12,7 +12,7 @@ import xrp
 
 from wpimath.kinematics import DifferentialDriveOdometry
 from wpimath.geometry import Rotation2d, Pose2d, Translation2d
-from wpilib import SmartDashboard, Timer
+from wpilib import SmartDashboard, Timer, Field2d
 
 
 class Drivetrain(commands2.Subsystem):
@@ -56,6 +56,7 @@ class Drivetrain(commands2.Subsystem):
         )
         self.resetEncoders()
         self.resetGyro()
+        self.field = Field2d()
 
         # Set up the differential drive controller and differential drive odometry
         self.odometry = DifferentialDriveOdometry(
@@ -64,6 +65,8 @@ class Drivetrain(commands2.Subsystem):
     def periodic(self) -> None:
         heading = Rotation2d.fromDegrees(self.getGyroAngleZ())
         pose = self.odometry.update(heading, self.getLeftDistanceInch(), self.getRightDistanceInch())
+        self.field.setRobotPose(pose.x / 12.0, pose.y / 12.0, pose.rotation())  # 12 inches for XRP = 1m on a "field"
+        SmartDashboard.putData(self.field)
         SmartDashboard.putNumber("distance-to-obst", self.getDistanceToObstacle())
         SmartDashboard.putNumber("left-reflect", self.reflectanceSensor.getLeftReflectanceValue())
         SmartDashboard.putNumber("right-reflect", self.reflectanceSensor.getRightReflectanceValue())
